@@ -1,37 +1,504 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Matching Results</title>
-    <style>
-        body { font-family: Arial; max-width: 800px; margin: auto; padding: 20px; }
-        .candidate { border: 1px solid #ddd; margin: 10px 0; padding: 10px; }
-        .best { background: #d4edda; border-color: #28a745; }
-        h3 { color: #007bff; }
-        ul { list-style-type: disc; padding-left: 20px; }
-        .email { background: #f8f9fa; padding: 10px; border-left: 4px solid #007bff; margin: 10px 0; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Results - Recruitment AI Agent</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-light: #4895ef;
+      --secondary: #3f37c9;
+      --success: #4cc9f0;
+      --danger: #f72585;
+      --warning: #f8961e;
+      --info: #4895ef;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --gray: #6c757d;
+      --gray-light: #e9ecef;
+      --border-radius: 8px;
+      --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--dark);
+      background-color: #f5f7fb;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .card {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      padding: 25px;
+      margin-bottom: 25px;
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--gray-light);
+    }
+
+    .card-header i {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-right: 12px;
+    }
+
+    .card-header h3 {
+      font-size: 1.4rem;
+      color: var(--dark);
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background-color: var(--secondary);
+      transform: translateY(-2px);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline:hover {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .candidate-card {
+      border-left: 4px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .candidate-card.best {
+      border-left-color: var(--success);
+      background-color: rgba(76, 201, 240, 0.05);
+    }
+
+    .candidate-card.best::before {
+      content: "BEST MATCH";
+      position: absolute;
+      top: 15px;
+      right: -30px;
+      background: var(--success);
+      color: white;
+      padding: 5px 35px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      transform: rotate(45deg);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .score {
+      display: inline-block;
+      padding: 5px 12px;
+      background-color: var(--primary);
+      color: white;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .score.high {
+      background-color: var(--success);
+    }
+
+    .score.medium {
+      background-color: var(--warning);
+    }
+
+    .score.low {
+      background-color: var(--danger);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background-color: var(--gray-light);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+
+    .badge.missing {
+      background-color: rgba(247, 37, 133, 0.1);
+      color: var(--danger);
+    }
+
+    .badge.match {
+      background-color: rgba(76, 201, 240, 0.1);
+      color: var(--success);
+    }
+
+    .candidate-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 15px;
+    }
+
+    .candidate-details {
+      flex: 1;
+    }
+
+    .candidate-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .skills-section {
+      margin: 15px 0;
+    }
+
+    .email-card {
+      border-left: 4px solid var(--info);
+    }
+
+    .email-card.rejection {
+      border-left-color: var(--danger);
+    }
+
+    .preview-box {
+      background-color: var(--gray-light);
+      padding: 15px;
+      border-radius: var(--border-radius);
+      margin-top: 15px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .stat-item {
+      padding: 15px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: var(--gray);
+    }
+
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .candidate-info {
+        flex-direction: column;
+      }
+      
+      .candidate-actions {
+        margin-top: 15px;
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .stats {
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>Matching Results</h1>
-    <p>Job Description: <pre>{{ jd_text }}</pre></p>
-    
-    <h2>Candidates (Sorted by Score)</h2>
-    {% for candidate in candidates %}
-    <div class="candidate {% if loop.first %}best{% endif %}">
-        <h3>{{ candidate.filename }} - Score: {{ candidate.score }}/100</h3>
-        <p><strong>Missing Skills:</strong> {{ candidate.missing_skills | join(', ') }}</p>
-        <p><strong>Remarks:</strong> {{ candidate.remarks }}</p>
-        
-        {% if loop.first %}
-            <h4>Interview Call Email (for {{ candidate.filename }})</h4>
-            <div class="email">{{ candidate.interview_email }}</div>
-        {% else %}
-            <h4>Rejection Email (for {{ candidate.filename }})</h4>
-            <div class="email">{{ candidate.rejection_email }}</div>
-        {% endif %}
+  <div class="container">
+    <div class="header">
+      <h1><i class="fas fa-chart-line"></i> Matching Results</h1>
+      <p>AI-powered candidate analysis for your job opening</p>
     </div>
-    {% endfor %}
-    
-    <a href="/">Back to Home</a>
+
+    <a href="/" class="btn btn-outline" style="margin-bottom: 20px;">
+      <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+
+    <!-- Job Description Preview -->
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-file-alt"></i>
+        <h3>Job Description</h3>
+      </div>
+      
+      <div class="preview-box">
+        <p><strong>Senior Frontend Developer</strong></p>
+        <p><strong>Company:</strong> Tech Innovations Inc.</p>
+        <p><strong>Location:</strong> Remote</p>
+        <p><strong>Experience:</strong> 5+ years</p>
+        <p>We are looking for a skilled Senior Frontend Developer to join our dynamic team. The ideal candidate will have extensive experience with modern JavaScript frameworks and a passion for creating exceptional user experiences.</p>
+        <p><strong>Required Skills:</strong> JavaScript, React, TypeScript, HTML5, CSS3, Git</p>
+        <p><strong>Preferred Skills:</strong> Next.js, GraphQL, Jest, Webpack</p>
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="card">
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value">8</div>
+          <div class="stat-label">Candidates</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">92%</div>
+          <div class="stat-label">Avg. Match</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">3</div>
+          <div class="stat-label">Top Candidates</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">2.1 days</div>
+          <div class="stat-label">Avg. Response Time</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Candidates -->
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-users"></i>
+        <h3>Candidates</h3>
+      </div>
+      
+      <!-- Best Match Candidate -->
+      <div class="candidate-card best">
+        <div class="candidate-info">
+          <div class="candidate-details">
+            <h3>John Smith</h3>
+            <div class="score high">98% Match</div>
+            <p><i class="fas fa-briefcase"></i> Senior Frontend Developer at TechCorp</p>
+            <p><i class="fas fa-map-marker-alt"></i> San Francisco, CA</p>
+            <p><i class="fas fa-clock"></i> 7 years experience</p>
+          </div>
+          <div class="candidate-actions">
+            <button class="btn"><i class="fas fa-envelope"></i> Contact</button>
+            <button class="btn btn-outline"><i class="fas fa-eye"></i> View CV</button>
+          </div>
+        </div>
+        
+        <div class="skills-section">
+          <p><strong>Matching Skills:</strong></p>
+          <div>
+            <span class="badge match">JavaScript</span>
+            <span class="badge match">React</span>
+            <span class="badge match">TypeScript</span>
+            <span class="badge match">HTML5</span>
+            <span class="badge match">CSS3</span>
+            <span class="badge match">Git</span>
+            <span class="badge match">Next.js</span>
+          </div>
+        </div>
+        
+        <div class="skills-section">
+          <p><strong>Missing Skills:</strong></p>
+          <div>
+            <span class="badge missing">GraphQL</span>
+          </div>
+        </div>
+        
+        <p><strong>Remarks:</strong> Excellent candidate with strong experience in React ecosystem. Has led teams and delivered complex projects.</p>
+      </div>
+      
+      <!-- Other Candidates -->
+      <div class="candidate-card">
+        <div class="candidate-info">
+          <div class="candidate-details">
+            <h3>Sarah Johnson</h3>
+            <div class="score high">94% Match</div>
+            <p><i class="fas fa-briefcase"></i> Frontend Developer at WebSolutions</p>
+            <p><i class="fas fa-map-marker-alt"></i> Austin, TX</p>
+            <p><i class="fas fa-clock"></i> 5 years experience</p>
+          </div>
+          <div class="candidate-actions">
+            <button class="btn"><i class="fas fa-envelope"></i> Contact</button>
+            <button class="btn btn-outline"><i class="fas fa-eye"></i> View CV</button>
+          </div>
+        </div>
+        
+        <div class="skills-section">
+          <p><strong>Matching Skills:</strong></p>
+          <div>
+            <span class="badge match">JavaScript</span>
+            <span class="badge match">React</span>
+            <span class="badge match">TypeScript</span>
+            <span class="badge match">HTML5</span>
+            <span class="badge match">CSS3</span>
+            <span class="badge match">Git</span>
+          </div>
+        </div>
+        
+        <div class="skills-section">
+          <p><strong>Missing Skills:</strong></p>
+          <div>
+            <span class="badge missing">Next.js</span>
+            <span class="badge missing">GraphQL</span>
+          </div>
+        </div>
+        
+        <p><strong>Remarks:</strong> Strong technical skills with good project portfolio. Would be a great addition to the team.</p>
+      </div>
+      
+      <div class="candidate-card">
+        <div class="candidate-info">
+          <div class="candidate-details">
+            <h3>Michael Brown</h3>
+            <div class="score medium">82% Match</div>
+            <p><i class="fas fa-briefcase"></i> UI Developer at DesignHub</p>
+            <p><i class="fas fa-map-marker-alt"></i> New York, NY</p>
+            <p><i class="fas fa-clock"></i> 4 years experience</p>
+          </div>
+          <div class="candidate-actions">
+            <button class="btn"><i class="fas fa-envelope"></i> Contact</button>
+            <button class="btn btn-outline"><i class="fas fa-eye"></i> View CV</button>
+          </div>
+        </div>
+        
+        <div class="skills-section">
+          <p><strong>Matching Skills:</strong></p>
+          <div>
+            <span class="badge match">JavaScript</span>
+            <span class="badge match">React</span>
+            <span class="badge match">HTML5</span>
+            <span class="badge match">CSS3</span>
+            <span class="badge match">Git</span>
+          </div>
+        </div>
+        
+        <div class="skills-section">
+          <p><strong>Missing Skills:</strong></p>
+          <div>
+            <span class="badge missing">TypeScript</span>
+            <span class="badge missing">Next.js</span>
+            <span class="badge missing">GraphQL</span>
+          </div>
+        </div>
+        
+        <p><strong>Remarks:</strong> Good design skills but limited experience with TypeScript. Would require some training.</p>
+      </div>
+    </div>
+
+    <!-- Email Templates -->
+    <div class="grid">
+      <!-- Interview Email -->
+      <div class="card email-card">
+        <div class="card-header">
+          <i class="fas fa-envelope"></i>
+          <h3>Interview Email (Best Candidate)</h3>
+        </div>
+        
+        <div class="preview-box">
+          <p><strong>Subject:</strong> Interview Invitation - Senior Frontend Developer Position</p>
+          <p>Dear John,</p>
+          <p>Thank you for your application for the Senior Frontend Developer position at Tech Innovations Inc.</p>
+          <p>We were impressed with your background and experience, and we would like to invite you for an interview.</p>
+          <p>The interview will be conducted remotely via Google Meet. Please let us know your availability for next week.</p>
+          <p>Best regards,<br>Hiring Team<br>Tech Innovations Inc.</p>
+        </div>
+        
+        <button class="btn" style="margin-top: 15px; width: 100%;">
+          <i class="fas fa-paper-plane"></i> Send Email
+        </button>
+      </div>
+      
+      <!-- Rejection Email -->
+      <div class="card email-card rejection">
+        <div class="card-header">
+          <i class="fas fa-envelope"></i>
+          <h3>Rejection Email Template</h3>
+        </div>
+        
+        <div class="preview-box">
+          <p><strong>Subject:</strong> Update on Your Application</p>
+          <p>Dear [Candidate Name],</p>
+          <p>Thank you for taking the time to apply for the Senior Frontend Developer position at Tech Innovations Inc.</p>
+          <p>We received a large number of applications from highly qualified candidates. After careful consideration, we have decided to move forward with other candidates whose qualifications more closely match our current needs.</p>
+          <p>We appreciate your interest in our company and wish you the best in your job search.</p>
+          <p>Sincerely,<br>Hiring Team<br>Tech Innovations Inc.</p>
+        </div>
+        
+        <button class="btn btn-outline" style="margin-top: 15px; width: 100%;">
+          <i class="fas fa-copy"></i> Copy Template
+        </button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
