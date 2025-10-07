@@ -1,54 +1,37 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Search Results</title>
-    <link href="https://cdn.jsdelivr.net/npm/mini.css@3.0.1/dist/mini-default.min.css" rel="stylesheet">
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Matching Results</title>
     <style>
-      .container { max-width: 1000px; margin: 2rem auto; }
-      table { width: 100%; }
-      .score { font-weight: 600; }
+        body { font-family: Arial; max-width: 800px; margin: auto; padding: 20px; }
+        .candidate { border: 1px solid #ddd; margin: 10px 0; padding: 10px; }
+        .best { background: #d4edda; border-color: #28a745; }
+        h3 { color: #007bff; }
+        ul { list-style-type: disc; padding-left: 20px; }
+        .email { background: #f8f9fa; padding: 10px; border-left: 4px solid #007bff; margin: 10px 0; }
     </style>
-  </head>
-  <body>
-    <main class="container">
-      <a href="/">← Back</a>
-      <h2>Search Results</h2>
-
-      {% if results %}
-        <table>
-          <thead>
-            <tr>
-              <th>Rank</th>
-              <th>Candidate</th>
-              <th>Score</th>
-              <th>Email</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in results %}
-              <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ r.name or 'Unknown' }}<div style="font-size:0.9rem;color:#666">{{ r.snippet or '' }}</div></td>
-                <td class="score">{{ '%.3f'|format(r.score) }}</td>
-                <td>{% if r.email %}<a href="mailto:{{ r.email }}">{{ r.email }}</a>{% else %}-{% endif %}</td>
-                <td>
-                  {% if r.email %}
-                    <a href="mailto:{{ r.email }}?subject=About%20your%20application">Email</a>
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p>No results found.</p>
-      {% endif %}
-
-      <hr />
-      <p><a href="/">Run another search</a></p>
-    </main>
-  </body>
+</head>
+<body>
+    <h1>Matching Results</h1>
+    <p>Job Description: <pre>{{ jd_text }}</pre></p>
+    
+    <h2>Candidates (Sorted by Score)</h2>
+    {% for candidate in candidates %}
+    <div class="candidate {% if loop.first %}best{% endif %}">
+        <h3>{{ candidate.filename }} - Score: {{ candidate.score }}/100</h3>
+        <p><strong>Missing Skills:</strong> {{ candidate.missing_skills | join(', ') }}</p>
+        <p><strong>Remarks:</strong> {{ candidate.remarks }}</p>
+        
+        {% if loop.first %}
+            <h4>Interview Call Email (for {{ candidate.filename }})</h4>
+            <div class="email">{{ candidate.interview_email }}</div>
+        {% else %}
+            <h4>Rejection Email (for {{ candidate.filename }})</h4>
+            <div class="email">{{ candidate.rejection_email }}</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    
+    <a href="/">Back to Home</a>
+</body>
 </html>
