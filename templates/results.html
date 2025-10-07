@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Search Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/mini.css@3.0.1/dist/mini-default.min.css" rel="stylesheet">
+    <style>
+      .container { max-width: 1000px; margin: 2rem auto; }
+      table { width: 100%; }
+      .score { font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <a href="/">← Back</a>
+      <h2>Search Results</h2>
+
+      {% if results %}
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Candidate</th>
+              <th>Score</th>
+              <th>Email</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in results %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ r.name or 'Unknown' }}<div style="font-size:0.9rem;color:#666">{{ r.snippet or '' }}</div></td>
+                <td class="score">{{ '%.3f'|format(r.score) }}</td>
+                <td>{% if r.email %}<a href="mailto:{{ r.email }}">{{ r.email }}</a>{% else %}-{% endif %}</td>
+                <td>
+                  {% if r.email %}
+                    <a href="mailto:{{ r.email }}?subject=About%20your%20application">Email</a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No results found.</p>
+      {% endif %}
+
+      <hr />
+      <p><a href="/">Run another search</a></p>
+    </main>
+  </body>
+</html>

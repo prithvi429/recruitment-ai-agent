@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Candidate Search</title>
+    <link href="https://cdn.jsdelivr.net/npm/mini.css@3.0.1/dist/mini-default.min.css" rel="stylesheet">
+    <style>
+      .container { max-width: 900px; margin: 2rem auto; }
+      textarea { min-height: 220px; }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <h2>Job Description & Resume Search</h2>
+
+      <form action="/search" method="post" enctype="multipart/form-data">
+        <div class="row">
+          <div class="col-sm-12 col-md-8">
+            <label for="jd">Job description (paste or type)</label>
+            <textarea id="jd" name="job_description" placeholder="Paste the job description here..."></textarea>
+          </div>
+
+          <div class="col-sm-12 col-md-4">
+            <label for="resume">Upload resume (PDF or DOCX)</label>
+            <input id="resume" name="resume" type="file" accept=".pdf,.doc,.docx" />
+
+            <label for="candidate_email">Candidate email (optional)</label>
+            <input id="candidate_email" name="candidate_email" type="email" placeholder="candidate@example.com" />
+
+            <label for="top_k">Top K results</label>
+            <input id="top_k" name="top_k" type="number" min="1" max="50" value="5" />
+
+            <div style="margin-top:1rem">
+              <button type="submit" class="primary">Search</button>
+              <button type="reset">Clear</button>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <hr />
+      <section>
+        <h4>How it works</h4>
+        <p>Paste a job description and optionally upload a candidate resume. The app will score and rank candidates by relevance and show contact details when available.</p>
+      </section>
+    </main>
+  </body>
+</html>
