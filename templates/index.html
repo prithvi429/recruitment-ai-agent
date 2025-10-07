@@ -1,49 +1,46 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Results</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 30px; }
-    .card { border: 1px solid #ccc; padding: 12px; margin-bottom: 12px; border-radius: 6px; }
-    .best { border-color: green; background: #f6fff6; }
-    pre { white-space: pre-wrap; }
-  </style>
+  <meta charset="utf-8">
+  <title>Recruitment AI Agent</title>
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <h1>Candidate Matching Results</h1>
-  <a href="/">← Back to Home</a>
+  <div class="container">
+    <h1>Recruitment AI Agent</h1>
+    <p class="subtitle">Summarize JDs, score resumes, and draft emails.</p>
 
-  <h2>Job Description</h2>
-  <div class="card"><pre>{{ jd.text }}</pre></div>
+    <section class="card">
+      <h2>1) Provide Job Description</h2>
+      <form action="/jd/summary" method="post">
+        <textarea name="jd_text" placeholder="Paste the JD here..." rows="10" required></textarea>
+        <div class="actions"><button type="submit">Generate JD Summary</button></div>
+      </form>
+    </section>
 
-  <h2>Resumes</h2>
-  {% if results %}
-    {% for c in results %}
-      <div class="card {% if loop.index0 == 0 %}best{% endif %}">
-        <b>{{ c.filename }}</b><br>
-        Score: {{ c.score }} / 100<br>
-        Missing skills: {{ c.missing_skills | join(", ") }}<br>
-        Remarks: {{ c.remarks }}
-      </div>
-    {% endfor %}
-  {% else %}
-    <p>No resumes processed yet.</p>
-  {% endif %}
+    <section class="card">
+      <h2>2) Upload Resumes</h2>
+      <form action="/resumes/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="files" multiple accept=".pdf,.docx,.txt" required>
+        <div class="actions"><button type="submit">Score Resumes</button></div>
+      </form>
+      <p class="hint">Allowed: .pdf, .docx, .txt (≤10MB each)</p>
+    </section>
 
-  {% if interview_email %}
-    <h2>Interview Email</h2>
-    <div class="card"><pre>{{ interview_email }}</pre></div>
-  {% endif %}
-
-  {% if rejection_emails %}
-    <h2>Rejection Emails</h2>
-    {% for r in rejection_emails %}
-      <div class="card">
-        <b>{{ r.filename }}</b>
-        <pre>{{ r.email }}</pre>
-      </div>
-    {% endfor %}
-  {% endif %}
+    <section class="card">
+      <h2>3) Draft Email</h2>
+      <form action="/email/generate" method="post">
+        <label>Email Type:
+          <select name="email_type">
+            <option value="interview">Interview Invite</option>
+            <option value="rejection">Rejection</option>
+          </select>
+        </label>
+        <label>Candidate Name: <input name="candidate_name" required></label>
+        <label>Candidate Email (optional): <input name="candidate_email"></label>
+        <div class="actions"><button type="submit">Generate Email</button></div>
+      </form>
+    </section>
+  </div>
 </body>
 </html>

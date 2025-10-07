@@ -1,154 +1,139 @@
-from fastapi import FastAPI, Request, Form, File, UploadFile
+from __future__ import annotations
+
+import os
+from typing import List, Optional, Dict, Any
+from fastapi import FastAPI, Request, Form, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from typing import List, Optional
-import os
+from fastapi.staticfiles import StaticFiles
 
-from utils.text_extraction import extract_text_from_uploaded_file
+from utils.text_extraction import extract_text_from_uploaded_file, AllowedExtensionError
 from utils.ai_client import (
-    generate_jd,
+    generate_jd_summary,
     match_resume_to_jd,
     generate_interview_email,
-    generate_rejection_email
+    generate_rejection_email,
 )
 
-app = FastAPI(
-    title="Recruitment AI Agent",
-    description="AI-powered resume matching and recruitment assistant"
-)
+APP_TITLE = "Recruitment AI Agent"
+APP_DESC = "AI-powered resume matching and recruitment assistant (rewritten, safe fallbacks)"
+MAX_FILE_SIZE_MB = 10
+ALLOWED_UPLOADS = {".pdf", ".docx", ".txt"}
+
+app = FastAPI(title=APP_TITLE, description=APP_DESC)
+
+# Mount /static for CSS
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
-# Temporary in-memory storage (for prototype/demo)
-current_jd = {"text": "", "summary": ""}
-results = []
+
+def _init_state() -> None:
+    if not hasattr(app.state, "jd"):
+        app.state.jd: Dict[str, Any] = {"text": "", "summary": ""}
+    if not hasattr(app.state, "results"):
+        app.state.results: List[Dict[str, Any]] = []
 
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    """Show index page with JD input options"""
-    return templates.TemplateResponse("index.html", {"request": request})
-
-
-@app.post("/process_jd", response_class=HTMLResponse)
-async def process_jd(
-    request: Request,
-    jd_file: Optional[UploadFile] = File(None),
-    jd_text: Optional[str] = Form(None),
-    title: Optional[str] = Form(None),
-    experience: Optional[str] = Form(None),
-    skills: Optional[str] = Form(None),
-    company: Optional[str] = Form(None),
-    etype: Optional[str] = Form(None),
-    industry: Optional[str] = Form(None),
-    location: Optional[str] = Form(None),
-    action: str = Form(...)
-):
-    """Process JD via file upload, manual text, or AI generation"""
-    global current_jd
-    jd_content = ""
-
-    # 1) Uploaded file
-    if jd_file:
-        contents = await jd_file.read()
-        jd_content = extract_text_from_uploaded_file(contents, jd_file.filename)
-
-    # 2) Manual JD text
-    elif jd_text:
-        jd_content = jd_text
-
-    # 3) Generate JD using AI (if all fields provided)
-    elif all([title, experience, skills, company, etype, industry, location]):
-        inputs = {
-            "title": title,
-            "experience": experience,
-            "skills": skills,
-            "company": company,
-            "type": etype,
-            "industry": industry,
-            "location": location
-        }
-        jd_content = generate_jd(inputs)
-
-    if not jd_content:
-        # render index with error message
-        return templates.TemplateResponse("index.html", {"request": request, "error": "No JD provided or generation failed."})
-
-    current_jd["text"] = jd_content
-    current_jd["summary"] = jd_content[:400]
-
-    return templates.TemplateResponse("index.html", {"request": request, "jd_text": jd_content})
-
-
-@app.post("/upload_resumes", response_class=HTMLResponse)
-async def upload_resumes(
-    request: Request,
-    resumes: List[UploadFile] = File(...)
-):
-    """Upload resumes, score them vs JD, show results"""
-    global results
-    results = []
-
-    if not current_jd["text"]:
-        return templates.TemplateResponse("index.html", {"request": request, "error": "Please provide or generate a Job Description first."})
-
-    # limit to 10 resumes for safety
-    resumes = resumes[:10]
-
-    for resume in resumes:
-        contents = await resume.read()
-        resume_text = extract_text_from_uploaded_file(contents, resume.filename)
-        if not resume_text:
-            match_result = {
-                "filename": resume.filename,
-                "score": 0,
-                "missing_skills": ["Could not parse"],
-                "remarks": "Failed to extract text from resume."
-            }
-        else:
-            match_result = match_resume_to_jd(current_jd["text"], resume_text, resume.filename)
-            match_result["filename"] = resume.filename
-
-        results.append(match_result)
-
-    # sort by score descending
-    results = sorted(results, key=lambda r: r.get("score", 0), reverse=True)
-
-    return templates.TemplateResponse("results.html", {"request": request, "jd": current_jd, "results": results})
-
-
-@app.get("/emails", response_class=HTMLResponse)
-async def emails(request: Request):
-    """Generate interview & rejection emails using AI"""
-    if not results:
-        return templates.TemplateResponse("index.html", {"request": request, "error": "No resumes processed yet."})
-
-    best = results[0]
-    interview_email = generate_interview_email(
-        candidate_name=best.get("filename", "Candidate"),
-        job_title=(current_jd["text"].splitlines()[0] if current_jd["text"] else "the role"),
-        remarks=best.get("remarks", ""),
-        jd_summary=current_jd.get("summary", "")
+    """Serve the index page."""
+    _init_state()
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "jd": app.state.jd,
+            "results": app.state.results,
+            "error": None,
+        },
     )
 
-    rejection_emails = []
-    for c in results[1:]:
-        rej = generate_rejection_email(
-            candidate_name=c.get("filename", "Candidate"),
-            job_title=(current_jd["text"].splitlines()[0] if current_jd["text"] else "the role"),
-            missing_skills=c.get("missing_skills", [])
+
+@app.post("/jd/summary", response_class=HTMLResponse)
+async def jd_summary(request: Request, jd_text: str = Form(...)):
+    """Generate JD summary using AI or fallback."""
+    _init_state()
+    if not jd_text or not jd_text.strip():
+        raise HTTPException(status_code=400, detail="Job description text is required.")
+    try:
+        summary = generate_jd_summary(jd_text.strip())
+        app.state.jd = {"text": jd_text.strip(), "summary": summary}
+        app.state.results = []
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to summarize JD: {e}")
+    return templates.TemplateResponse(
+        "results.html",
+        {"request": request, "jd": app.state.jd, "results": app.state.results, "email": None},
+    )
+
+
+@app.post("/resumes/upload", response_class=HTMLResponse)
+async def upload_resumes(request: Request, files: List[UploadFile] = File(...)):
+    """Upload resumes and score them."""
+    _init_state()
+    if not app.state.jd.get("text"):
+        raise HTTPException(status_code=400, detail="Please provide a JD first.")
+    if not files:
+        raise HTTPException(status_code=400, detail="No files uploaded.")
+
+    results: List[Dict[str, Any]] = []
+    for file in files:
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext not in ALLOWED_UPLOADS:
+            raise HTTPException(status_code=415, detail=f"Unsupported file type: {ext}")
+        if file.size and file.size > MAX_FILE_SIZE_MB * 1024 * 1024:
+            raise HTTPException(status_code=413, detail=f"{file.filename} is too large.")
+
+        try:
+            text = await extract_text_from_uploaded_file(file)
+        except AllowedExtensionError as e:
+            raise HTTPException(status_code=415, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=f"Failed to read {file.filename}: {e}")
+
+        try:
+            score, details = match_resume_to_jd(text, app.state.jd["text"])
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to score {file.filename}: {e}")
+
+        results.append(
+            {
+                "filename": file.filename,
+                "score": round(float(score) * 100, 2),
+                "details": details,
+            }
         )
-        rejection_emails.append({"filename": c.get("filename"), "email": rej})
 
-    return templates.TemplateResponse("results.html", {
-        "request": request,
-        "jd": current_jd,
-        "results": results,
-        "interview_email": interview_email,
-        "rejection_emails": rejection_emails
-    })
+    results.sort(key=lambda r: r["score"], reverse=True)
+    app.state.results = results
+
+    return templates.TemplateResponse(
+        "results.html",
+        {"request": request, "jd": app.state.jd, "results": app.state.results, "email": None},
+    )
 
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+@app.post("/email/generate", response_class=HTMLResponse)
+async def email_generate(
+    request: Request,
+    email_type: str = Form(...),
+    candidate_name: str = Form(...),
+    candidate_email: Optional[str] = Form(None),
+):
+    """Generate interview or rejection email."""
+    _init_state()
+    if email_type not in {"interview", "rejection"}:
+        raise HTTPException(status_code=400, detail="Invalid email_type.")
+    if not candidate_name.strip():
+        raise HTTPException(status_code=400, detail="candidate_name is required.")
+
+    if email_type == "interview":
+        email = generate_interview_email(candidate_name.strip(), app.state.jd.get("text", ""))
+    else:
+        email = generate_rejection_email(candidate_name.strip())
+
+    return templates.TemplateResponse(
+        "results.html",
+        {"request": request, "jd": app.state.jd, "results": app.state.results, "email": email, "candidate_email": candidate_email},
+    )
