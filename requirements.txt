@@ -8,3 +8,5 @@ openai==1.3.7
 python-dotenv==1.0.0
 pdfminer.six==20221105
 scikit-learn==1.3.2
+pdfminer.six
+scikit-learn

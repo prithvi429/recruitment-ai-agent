@@ -1,15 +1,72 @@
-:root { --fg:#0f172a; --muted:#475569; --bg:#f8fafc; --card:#fff; --border:#e2e8f0; }
-body { font-family: sans-serif; background: var(--bg); color: var(--fg); margin:0; }
-.container { max-width: 800px; margin: 2rem auto; padding: 1rem; }
-h1 { margin-bottom: 1rem; }
-.subtitle { color: var(--muted); margin-bottom: 1.5rem; }
-.card { background: var(--card); border:1px solid var(--border); border-radius:10px; padding:1rem; margin-bottom:1rem; }
-textarea, input, select { width:100%; padding:.5rem; margin:.3rem 0; border:1px solid var(--border); border-radius:8px; }
-button { background:#111827; color:#fff; border:none; padding:.6rem 1rem; border-radius:8px; cursor:pointer; }
-button:hover { opacity:.9; }
-.actions { margin-top:.7rem; }
-.hint { color:var(--muted); font-size:.85rem; }
-pre.pre { background:#f1f5f9; padding:.7rem; border-radius:8px; }
-table { width:100%; border-collapse:collapse; margin-top:.5rem; }
-th, td { border-bottom:1px solid var(--border); padding:.5rem; text-align:left; }
-.link { color:#0369a1; text-decoration:none; }
+/* Base styles for the recruitment-ai-agent app */
+:root{
+  --accent: #0b5cff;
+  --muted: #666666;
+  --bg: #ffffff;
+  --card-bg: #fbfbff;
+  --border: #e9e9ef;
+}
+
+html,body{
+  height:100%;
+  margin:0;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background:var(--bg);
+  color:#222;
+}
+
+.container{
+  max-width:1000px;
+  margin:2rem auto;
+  padding:1rem;
+}
+
+header, main { padding: 0.5rem 0; }
+
+a{ color:var(--accent); text-decoration:none }
+a:hover{ text-decoration:underline }
+
+/* Forms */
+label{ display:block; margin:0.45rem 0 0.25rem 0; color:var(--muted); font-size:0.95rem }
+input[type="text"], input[type="email"], input[type="number"], textarea, select{
+  width:100%;
+  padding:0.5rem;
+  border:1px solid var(--border);
+  border-radius:6px;
+  box-sizing:border-box;
+  background: #fff;
+}
+textarea{ min-height:200px; resize:vertical }
+
+.row{ display:flex; gap:1rem; align-items:flex-start }
+.col-sm-12{ flex:1 1 100% }
+.col-md-8{ flex: 2 1 0 }
+.col-md-4{ flex: 1 1 0 }
+
+/* Buttons */
+.primary, button.primary{
+  background:var(--accent);
+  color:white;
+  border:none;
+  padding:0.45rem 0.75rem;
+  border-radius:6px;
+  cursor:pointer;
+}
+.secondary, button.secondary{ background:#f2f4f7; color:#222 }
+
+/* Table */
+table{ width:100%; border-collapse:collapse; background:var(--card-bg); border-radius:6px; overflow:hidden }
+th, td{ text-align:left; padding:0.65rem 0.9rem; border-bottom:1px solid var(--border) }
+th{ background:#ffffff; font-weight:600; color:#111 }
+tbody tr:last-child td{ border-bottom: none }
+.score{ font-weight:700; color:#0a66c2 }
+
+.small{ font-size:0.9rem; color:var(--muted) }
+
+/* Responsive */
+@media (max-width: 768px){
+  .row{ display:block }
+  .col-md-8, .col-md-4{ width:100%; margin-bottom:0.75rem }
+  .container{ margin:1rem }
+  th, td{ padding:0.5rem }
+}

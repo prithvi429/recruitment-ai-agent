@@ -2,13 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Results</title>
+  <title>Results - Recruitment AI Agent</title>
   <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    .best { background: #dcfce7; font-weight: bold; }  /* highlight best candidate */
+    .remarks { font-size: 0.9em; color: #475569; }
+  </style>
 </head>
 <body>
   <div class="container">
     <h1>Results</h1>
 
+    <!-- JD Summary -->
     <section class="card">
       <h2>Job Description Summary</h2>
       {% if jd and jd.summary %}
@@ -19,18 +24,43 @@
       <div class="actions"><a class="link" href="/">← Back</a></div>
     </section>
 
+    <!-- Resume Scores -->
     <section class="card">
       <h2>Resume Match Scores</h2>
       {% if results %}
         <table>
-          <thead><tr><th>#</th><th>Filename</th><th>Score (%)</th><th>Overlap</th></tr></thead>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Filename</th>
+              <th>Score (%)</th>
+              <th>Overlap</th>
+              <th>Missing Skills</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
           <tbody>
+            {% set best_score = results[0].score if results else 0 %}
             {% for r in results %}
-              <tr>
+              <tr class="{% if r.score == best_score %}best{% endif %}">
                 <td>{{ loop.index }}</td>
                 <td>{{ r.filename }}</td>
                 <td>{{ r.score }}</td>
                 <td>{{ r.details.top_overlap_terms[0:10] }}</td>
+                <td>
+                  {% if r.details.missing_skills %}
+                    {{ r.details.missing_skills }}
+                  {% else %}
+                    None
+                  {% endif %}
+                </td>
+                <td class="remarks">
+                  {% if r.details.remarks %}
+                    {{ r.details.remarks }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
               </tr>
             {% endfor %}
           </tbody>
@@ -40,6 +70,7 @@
       {% endif %}
     </section>
 
+    <!-- Email Draft -->
     <section class="card">
       <h2>Email Draft</h2>
       {% if email %}
